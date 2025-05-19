@@ -8,6 +8,11 @@ export interface UserProfile {
   referralCode: string;
   points: number;
   coupons: ICoupon[];
+  role: "CUSTOMER" | "PENDING_ORGANIZER" | "ORGANIZER";
+  organizationName?: string;
+  organizationDesc?: string;
+  organizationAddr?: string;
+  organizationPhone?: string;
 }
 
 export interface ICoupon {
