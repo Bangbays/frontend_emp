@@ -1,60 +1,61 @@
 "use client";
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { resetPasswordSchema } from "@/schema/profile.schema";
+import { resetPasswordSchema } from "@/schema/auth.schema";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { useFormik } from "formik";
-import { resetPassword } from "@/services/userService";
+import { resetPassword } from "@/services/authServices";
+import { toast } from "react-toastify";
 
 export default function ResetPasswordPage() {
   const { token } = useParams();
-  const resetToken = token as string;
   const router = useRouter();
-  const [done, setDone] = useState(false);
-
   const formik = useFormik({
-    initialValues: { newPassword: "" },
+    initialValues: { newPassword: "", confirmNewPassword: "" },
     validationSchema: toFormikValidationSchema(resetPasswordSchema),
     onSubmit: async (vals) => {
       try {
-        await resetPassword(resetToken, vals);
-        setDone(true);
+        if (typeof token !== "string") {
+          toast.error("Token tidak valid");
+          return;
+        }
+        await resetPassword(token, vals.newPassword);
+        toast.success("Password berhasil direset");
+        router.push("/login");
       } catch {
-        alert("Reset gagal");
+        toast.error("Token invalid atau sudah kadaluwarsa");
       }
     },
   });
 
-  if (done) {
-    router.push("/login");
-    return <p>Reset berhasil, silahkan login...</p>;
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <form
-        onSubmit={formik.handleSubmit}
-        className="w-full max-w-md bg-white p-6 rounded-x1 shadow-lg space-y-4"
-      >
-        <h2 className="text-2x1 font-semibold text-center">Reset Password</h2>
-        <div>
-          <label>Password Baru</label>
+    <form
+      onSubmit={formik.handleSubmit}
+      className="max-w-md mx-auto p-4 bg-white rounded space-y-4"
+    >
+      <h1 className="text-x1 font-bold">Reset Password</h1>
+      {(
+        ["newPassword", "confirmNewPassword"] as Array<
+          keyof typeof formik.values
+        >
+      ).map((field) => (
+        <div key={field}>
+          <label className="block text-sm">{field}</label>
           <input
             type="password"
-            {...formik.getFieldProps("newPassword")}
-            className="w-full px-4 py-2 border rounded-lg"
+            {...formik.getFieldProps(field)}
+            className="w-full border p-2 rounded"
           />
-          {formik.touched.newPassword && formik.errors.newPassword && (
-            <p className="text-red-500 text-sm">{formik.errors.newPassword}</p>
+          {formik.touched[field] && formik.errors[field] && (
+            <p className="text-red-500 text-sm">{formik.errors[field]}</p>
           )}
         </div>
-        <button
-          type="submit"
-          className="w-full py-3 bg-indigo-600 text-white rounded-lg"
-        >
-          Reset Password
-        </button>
-      </form>
-    </div>
+      ))}
+      <button
+        type="submit"
+        className="w-full py-2 bg-indigo-600 text-white rounded"
+      >
+        Reset Password
+      </button>
+    </form>
   );
 }

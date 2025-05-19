@@ -12,3 +12,11 @@ export function register(data: IRegister) {
 export function login(data: ILogin) {
   return api.post("/auth/login", data);
 }
+
+export function forgotPassword(email: string) {
+  return api.post("/auth/forgot-password", { email });
+}
+
+export function resetPassword(token: string, newPassword: string) {
+  return api.post(`/auth/reset-password/${token}`, { newPassword });
+}

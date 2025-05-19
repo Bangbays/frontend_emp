@@ -3,7 +3,7 @@ import { useFormik } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { loginSchema } from "@/schema/auth.schema";
 import { login } from "@/services/authServices";
-import { saveToken } from "@/store/authSlice";
+import { loginSuccess } from "@/store/authSlice";
 import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/store/hooks";
 import { toast, ToastContainer } from "react-toastify";
@@ -17,9 +17,9 @@ export default function LoginPage() {
     onSubmit: async (vals) => {
       try {
         const res = await login(vals);
-        dispatch(saveToken(res.data.token));
+        dispatch(loginSuccess(res.data.token));
         toast.success("Login berhasil!");
-        router.push("/");
+        router.push("/profile");
       } catch {
         toast.error("Email atau password salah");
       }
@@ -65,6 +65,15 @@ export default function LoginPage() {
                 {formik.errors.password}
               </p>
             )}
+          </div>
+
+          <div className="text-right">
+            <a
+              href="/forgot-password"
+              className="text-sm text-indigo-600 hover:underline"
+            >
+              Lupa Password?
+            </a>
           </div>
 
           <button

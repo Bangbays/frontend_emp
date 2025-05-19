@@ -1,19 +1,8 @@
 export interface UserProfile {
+  id: string;
   firstName: string;
   lastName: string;
+  email: string;
   bio?: string;
   profilePictureUrl?: string;
-}
-
-export interface IChangePassword {
-  oldPassword: string;
-  newPassword: string;
-}
-
-export interface IForgotPassword {
-  email: string;
-}
-
-export interface IResetPassword {
-  newPassword: string;
 }

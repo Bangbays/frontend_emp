@@ -18,3 +18,17 @@ export const loginSchema = z.object({
   email: z.string().email("Formati email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
+
+export const forgotSchema = z.object({
+  email: z.string().email("Format email tidak valid"),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    newPassword: z.string().min(6, "Password minimal 6 karakter"),
+    confirmNewPassword: z.string().min(6, "Konfirmasi password wajib diisi"),
+  })
+  .refine((d) => d.newPassword === d.confirmNewPassword, {
+    message: "Password tidak cocok",
+    path: ["confirmNewPassword"],
+  });

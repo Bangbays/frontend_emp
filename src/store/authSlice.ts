@@ -9,14 +9,14 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    saveToken(state, action: PayloadAction<string>) {
+    loginSuccess(state, action: PayloadAction<string>) {
       state.token = action.payload;
     },
-    clearToken(state) {
+    logout(state) {
       state.token = null;
     },
   },
 });
 
-export const { saveToken, clearToken } = authSlice.actions;
+export const { loginSuccess, logout } = authSlice.actions;
 export default authSlice.reducer;

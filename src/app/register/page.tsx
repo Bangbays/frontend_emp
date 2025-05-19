@@ -21,7 +21,14 @@ export default function RegisterPage() {
     validationSchema: toFormikValidationSchema(registerSchema),
     onSubmit: async (vals) => {
       try {
-        await register(vals);
+        await register({
+          firstName: vals.firstName,
+          lastName: vals.lastName,
+          email: vals.email,
+          password: vals.password,
+          confirmPassword: vals.confirmPassword,
+          referralCode: vals.referralCode || undefined,
+        });
         toast.success("Register berhasil!");
         router.push("/login");
       } catch {

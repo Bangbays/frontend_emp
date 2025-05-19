@@ -1,24 +1,17 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useState } from "react";
+import { useProfile } from "@/hooks/useProfile";
+import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { setProfile } from "@/store/profilSlice";
-import { fetchProfile, updateProfile } from "@/services/userService";
-import { updateProfileSchema } from "@/schema/profile.schema";
-import { toFormikValidationSchema } from "zod-formik-adapter";
 import { useFormik } from "formik";
+import { toFormikValidationSchema } from "zod-formik-adapter";
+import { profileSchema } from "@/schema/profile.schema";
 import Image from "next/image";
 
-export default function ProfilePage() {
-  const dispatch = useDispatch();
-  const profile = useSelector((s: RootState) => s.profile.data);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchProfile()
-      .then((res) => dispatch(setProfile(res.data)))
-      .finally(() => setLoading(false));
-  }, [dispatch]);
+export default function ProfilPage() {
+  const { loading, saveProfile } = useProfile();
+  const profile = useSelector((s: RootState) => s.profile.profile);
+  const [editMode, setEditMode] = useState(false);
 
   const formik = useFormik({
     enableReinitialize: true,
@@ -28,64 +21,63 @@ export default function ProfilePage() {
       bio: profile?.bio || "",
       avatar: null as File | null,
     },
-    validationSchema: toFormikValidationSchema(updateProfileSchema),
+    validationSchema: toFormikValidationSchema(profileSchema),
     onSubmit: async (vals) => {
       const form = new FormData();
-      form.append("name", `${vals.firstName} ${vals.lastName}`);
-      form.append("bio", vals.bio || "");
+      form.append("firstName", vals.firstName);
+      form.append("lastName", vals.lastName);
+      if (vals.bio) form.append("bio", vals.bio);
       if (vals.avatar) form.append("avatar", vals.avatar);
-      const res = await updateProfile(form);
-      dispatch(setProfile(res.data));
-      alert("Profil diperbarui");
+      await saveProfile(form);
+      setEditMode(false);
     },
   });
 
-  if (loading) return <p>Loading...</p>;
+  if (loading || !profile) return <p>Loading...</p>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <form
-        onSubmit={formik.handleSubmit}
-        className="w-full max-w-md bg-white rounded-x1 shadow-lg p-6 space-y-4"
-      >
-        <h2 className="text-2x1 font-semibold text-center">Profil Saya</h2>
-
-        <div className="flex space-x-4 items-center">
+    <div className="max-w-md mx-auto p-4 bg-white rounded shadow">
+      <h1 className="text-x1 font-bold mb-4">Profil Saya</h1>
+      <form onSubmit={formik.handleSubmit} className="space-y-4">
+        <div className="flex items-center space-x-4">
           <Image
-            src={profile?.profilePictureUrl || "/default-avatar.jpg"}
+            src={profile.profilePictureUrl || "/avatar-placeholder.png"}
             alt="Avatar"
-            width={80}
-            height={80}
+            width={64}
+            height={64}
             className="rounded-full object-cover"
           />
-          <input
-            type="file"
-            accept="image/jpeg"
-            onChange={(e) =>
-              formik.setFieldValue("avatar", e.currentTarget.files?.[0] || null)
-            }
-          />
-          {formik.errors.avatar && (
-            <p className="text-red-500 text-sm">{formik.errors.avatar}</p>
+          {editMode && (
+            <input
+              type="File"
+              accept="image/jpg"
+              onChange={(e) =>
+                formik.setFieldValue(
+                  "avatar",
+                  e.currentTarget.files?.[0] || null
+                )
+              }
+            />
           )}
         </div>
 
         <div>
           <label className="block text-sm">Nama Depan</label>
           <input
+            disabled={!editMode}
             {...formik.getFieldProps("firstName")}
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full border p-2 rounded disabled:bg-gray-100"
           />
           {formik.touched.firstName && formik.errors.firstName && (
             <p className="text-red-500 text-sm">{formik.errors.firstName}</p>
           )}
         </div>
-
         <div>
           <label className="block text-sm">Nama Belakang</label>
           <input
+            disabled={!editMode}
             {...formik.getFieldProps("lastName")}
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full border p-2 rounded disabled:bg-gray-100"
           />
           {formik.touched.lastName && formik.errors.lastName && (
             <p className="text-red-500 text-sm">{formik.errors.lastName}</p>
@@ -95,16 +87,18 @@ export default function ProfilePage() {
         <div>
           <label className="block text-sm">Bio</label>
           <textarea
+            disabled={!editMode}
             {...formik.getFieldProps("bio")}
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full border p-2 rounded disabled:bg-gray-100"
           />
         </div>
 
         <button
-          type="submit"
-          className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          type={editMode ? "submit" : "button"}
+          onClick={() => (editMode ? formik.handleSubmit() : setEditMode(true))}
+          className="w-full py-2 bg-indigo-600 text-white rounded"
         >
-          Simpan Perubahan
+          {editMode ? "Simpan Perubahan" : "Edit Profil"}
         </button>
       </form>
     </div>
