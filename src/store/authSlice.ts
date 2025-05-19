@@ -1,9 +1,11 @@
+import { UserProfile } from "@/types/profile";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AuthState {
   token: string | null;
+  user: UserProfile | null;
 }
-const initialState: AuthState = { token: null };
+const initialState: AuthState = { token: null, user: null };
 
 const authSlice = createSlice({
   name: "auth",
