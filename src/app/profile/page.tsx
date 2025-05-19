@@ -8,6 +8,7 @@ import { profileSchema } from "@/schema/profile.schema";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { useFormik } from "formik";
 import Image from "next/image";
+import { differenceInDays, parseISO } from "date-fns";
 
 export default function ProfilePage() {
   const dispatch = useDispatch();
@@ -105,7 +106,7 @@ export default function ProfilePage() {
             <strong>Referral Code:</strong> {profile.referralCode}
           </p>
           <p>
-            <strong>Poin Anda:</strong> {profile.points}
+            <strong>Poin Anda:</strong> {profile.points.toLocaleString()}
           </p>
         </div>
 
@@ -114,12 +115,18 @@ export default function ProfilePage() {
           <strong>Voucher Aktif:</strong>
           <ul className="list-disc ml-5">
             {profile.coupons.length > 0 ? (
-              profile.coupons.map((c) => (
-                <li key={c.id}>
-                  {c.code} – IDR {c.discount.toLocaleString()} (exp:{" "}
-                  {new Date(c.expiresAt).toLocaleDateString()})
-                </li>
-              ))
+              profile.coupons.map((c) => {
+                const expires = parseISO(c.expiresAt);
+                const daysLeft = differenceInDays(expires, new Date());
+                return (
+                  <li key={c.id}>
+                    {c.code} – IDR {c.discount.toLocaleString()} (exp:{" "}
+                    <span className="text-sm text-gray-500">
+                      (sisa {daysLeft} hari)
+                    </span>
+                  </li>
+                );
+              })
             ) : (
               <li>Tidak ada voucher</li>
             )}

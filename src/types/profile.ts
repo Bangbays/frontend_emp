@@ -14,6 +14,7 @@ export interface ICoupon {
   id: string;
   code: string;
   discount: number;
-  used: boolean;
+  isUsed: boolean;
+  createdAt: string;
   expiresAt: string;
 }
