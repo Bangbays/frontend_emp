@@ -1,17 +1,25 @@
 "use client";
-import { useState } from "react";
-import { useProfile } from "@/hooks/useProfile";
-import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { useFormik } from "formik";
-import { toFormikValidationSchema } from "zod-formik-adapter";
+import { setProfile } from "@/store/profilSlice";
+import { fetchProfile, updateProfile } from "@/services/profileService";
 import { profileSchema } from "@/schema/profile.schema";
+import { toFormikValidationSchema } from "zod-formik-adapter";
+import { useFormik } from "formik";
 import Image from "next/image";
 
-export default function ProfilPage() {
-  const { loading, saveProfile } = useProfile();
+export default function ProfilePage() {
+  const dispatch = useDispatch();
   const profile = useSelector((s: RootState) => s.profile.profile);
+  const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
+
+  useEffect(() => {
+    fetchProfile()
+      .then((res) => dispatch(setProfile(res.data)))
+      .finally(() => setLoading(false));
+  }, [dispatch]);
 
   const formik = useFormik({
     enableReinitialize: true,
@@ -24,73 +32,98 @@ export default function ProfilPage() {
     validationSchema: toFormikValidationSchema(profileSchema),
     onSubmit: async (vals) => {
       const form = new FormData();
-      form.append("firstName", vals.firstName);
-      form.append("lastName", vals.lastName);
-      if (vals.bio) form.append("bio", vals.bio);
+      form.append("name", `${vals.firstName} ${vals.lastName}`);
+      form.append("bio", vals.bio);
       if (vals.avatar) form.append("avatar", vals.avatar);
-      await saveProfile(form);
+      const res = await updateProfile(form);
+      dispatch(setProfile(res.data));
       setEditMode(false);
+      alert("Profil diperbarui");
     },
   });
 
-  if (loading || !profile) return <p>Loading...</p>;
+  if (loading) return <p>Loading...</p>;
+  if (!profile) return <p>Tidak ada data profil</p>;
 
   return (
-    <div className="max-w-md mx-auto p-4 bg-white rounded shadow">
-      <h1 className="text-x1 font-bold mb-4">Profil Saya</h1>
-      <form onSubmit={formik.handleSubmit} className="space-y-4">
-        <div className="flex items-center space-x-4">
-          <Image
-            src={profile.profilePictureUrl || "/avatar-placeholder.png"}
-            alt="Avatar"
-            width={64}
-            height={64}
-            className="rounded-full object-cover"
-          />
-          {editMode && (
-            <input
-              type="File"
-              accept="image/jpg"
-              onChange={(e) =>
-                formik.setFieldValue(
-                  "avatar",
-                  e.currentTarget.files?.[0] || null
-                )
-              }
-            />
-          )}
-        </div>
+    <div className="max-w-md mx-auto p-6 bg-white rounded shadow">
+      <h1 className="text-2xl font-bold mb-4">Profil Saya</h1>
 
+      <div className="flex items-center mb-4 space-x-4">
+        <Image
+          src={profile.profilePictureUrl || "/avatar-placeholder.png"}
+          width={64}
+          height={64}
+          alt="Avatar"
+          className="rounded-full"
+        />
+        {editMode && (
+          <input
+            type="file"
+            accept="image/jpeg"
+            onChange={(e) =>
+              formik.setFieldValue("avatar", e.currentTarget.files?.[0] || null)
+            }
+          />
+        )}
+      </div>
+
+      <form onSubmit={formik.handleSubmit} className="space-y-4">
+        {/* Nama Depan */}
         <div>
-          <label className="block text-sm">Nama Depan</label>
+          <label className="block text-sm font-medium">Nama Depan</label>
           <input
             disabled={!editMode}
             {...formik.getFieldProps("firstName")}
             className="w-full border p-2 rounded disabled:bg-gray-100"
           />
-          {formik.touched.firstName && formik.errors.firstName && (
-            <p className="text-red-500 text-sm">{formik.errors.firstName}</p>
-          )}
         </div>
+
+        {/* Nama Belakang */}
         <div>
-          <label className="block text-sm">Nama Belakang</label>
+          <label className="block text-sm font-medium">Nama Belakang</label>
           <input
             disabled={!editMode}
             {...formik.getFieldProps("lastName")}
             className="w-full border p-2 rounded disabled:bg-gray-100"
           />
-          {formik.touched.lastName && formik.errors.lastName && (
-            <p className="text-red-500 text-sm">{formik.errors.lastName}</p>
-          )}
         </div>
 
+        {/* Bio */}
         <div>
-          <label className="block text-sm">Bio</label>
+          <label className="block text-sm font-medium">Bio</label>
           <textarea
             disabled={!editMode}
             {...formik.getFieldProps("bio")}
             className="w-full border p-2 rounded disabled:bg-gray-100"
           />
+        </div>
+
+        {/* Referral Code & Points */}
+        <div className="mt-4">
+          <p>
+            <strong>Referral Code:</strong> {profile.referralCode}
+          </p>
+          <p>
+            <strong>Poin Anda:</strong> {profile.points}
+          </p>
+        </div>
+
+        {/* Daftar Voucher */}
+        <div>
+          <strong>Voucher Aktif:</strong>
+          <ul className="list-disc ml-5">
+            {profile.coupons.length > 0 ? (
+              profile.coupons.map((c) => (
+                <li key={c.id}>
+                  {c.code} – IDR {c.discount.toLocaleString()} (exp:{" "}
+                  {new Date(c.expiresAt).toLocaleDateString()})
+                </li>
+              ))
+            ) : (
+              <li>Tidak ada voucher</li>
+            )}
+          </ul>
         </div>
 
         <button

@@ -5,4 +5,15 @@ export interface UserProfile {
   email: string;
   bio?: string;
   profilePictureUrl?: string;
+  referralCode: string;
+  points: number;
+  coupons: ICoupon[];
+}
+
+export interface ICoupon {
+  id: string;
+  code: string;
+  discount: number;
+  used: boolean;
+  expiresAt: string;
 }
